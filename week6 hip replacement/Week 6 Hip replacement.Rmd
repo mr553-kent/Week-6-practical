@@ -1,0 +1,153 @@
+---
+title: "week6 hip replacement"
+author: "Melanie Rees-Roberts"
+date: "2024-11-07"
+output:
+  pdf_document: default
+  html_document: default
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Week 6 practical: Hip replacement data work
+
+#This is work to complete the Hip replacement data practical work for IntroHDS 
+#course, week 6. 
+#The following questions require answering to complete the practical:
+
+#1. Plot 'EQ-5D Index' scores pre and post operation for each gender
+
+#2. Calculate how many patients in this dataset have been told by a doctor that 
+#they have problems caused by a stroke
+
+#3. Create a clean and tidy table with pre and post operation activity levels
+
+## Libraries and packages needed 
+
+#For this work we require the following packages; tidyverse
+
+#From this package we will use the following libraries
+
+```{r call libraries}
+library(readr)
+library(tidyr)
+library(dplyr)
+library(here)
+library(ggplot2)
+```
+
+## Import the data
+#Data file provided called Hip replacement CCG 1819. Import the data with 
+#read_csv command
+
+```{r}
+hip <- read_csv("Hip Replacement CCG 1819.csv")
+```
+## Understand, select and tidy the data
+
+```{r}
+head(hip)
+colnames(hip)
+
+#Check this is for a single year - then dont need the year variable
+hip %>% 
+count(Year)
+```
+
+#For this exercise, we need the following data variables:
+#Gender, Strike, Pre-OP Q EQ5D Index, Post-Op Q EQ5D Index, Pre-Op Q Activity, Post-Op Q Activity
+#Create tibble with required variables, shortening the variable names where appropriate
+
+```{r}
+hip2 <- hip %>% 
+  select('Gender','Pre-Op Q EQ5D Index','Post-Op Q EQ5D Index','Stroke','Pre-Op Q Activity','Post-Op Q Activity') %>% 
+  rename(EQ5D_pre = 'Pre-Op Q EQ5D Index',
+         EQ5D_post = 'Post-Op Q EQ5D Index',
+         activity_pre = 'Pre-Op Q Activity',
+         activity_post = 'Post-Op Q Activity')
+
+head(hip2)
+
+```
+
+#Remove missing values - create this into new data frame hip3
+
+```{r}
+hip2$Gender %>% table()
+
+hip3 <- hip2 %>% 
+  drop_na() %>% 
+  filter(Gender !='*')
+
+head(hip3)
+
+```
+
+##Tidy the data - move pre and post into a time variable and th EQ5D and Activity into variables
+#Saved into a new dataset tidy_hip
+
+```{r}
+tidy_hip <- hip3 %>% 
+  pivot_longer(c(EQ5D_pre,EQ5D_post),
+               names_to = 'Time_EQ5D',
+               names_prefix = 'EQ5D_',
+               values_to = 'EQ5D')
+
+
+tidy_hip <- tidy_hip %>% 
+  pivot_longer(c(activity_pre, activity_post),
+               names_to = 'Time_activity',
+               names_prefix = 'activity_',
+               values_to = 'activity')
+
+
+head(tidy_hip)
+```
+
+##Answer the questions
+
+##1. Plot 'EQ-5D Index' scores pre and post operation for each gender
+
+```{r}
+#From tidy_hip we can now select the data and plot the scores
+
+tidy_hip_plot <- tidy_hip %>% 
+  select(EQ5D, Time_EQ5D,Gender
+         )
+
+head(tidy_hip_plot)
+
+#Now plot the data pre and post for each gender
+
+tidy_hip_plot %>% 
+  ggplot() +
+  geom_boxplot(aes(x=Time_EQ5D, y= EQ5D, colour = Gender))
+```
+
+
+##2. Calculate how many patients in this dataset have been told by a doctor that 
+#they have problems caused by a stroke
+
+```{r}
+#We need to return to our table where we did not make the data tidy - this may cause duplication of Stroke data
+#calculate the how many patients have been told they have problems caused by stroke
+
+hip2$Stroke %>% table() 
+```
+# A total of 400 patients in this dataset have been told that they have problems caused by stroke.
+
+##3. Create a clean and tidy table with pre and post operation activity levels
+#We converted the pre- and post- activity levels earlier in the file - see code above. However, to show just these variables
+
+```{r}
+
+head(tidy_hip)
+
+tidy_hip_activity <- tidy_hip %>% 
+  select(Time_activity,activity) 
+
+head(tidy_hip_activity)
+```
+
